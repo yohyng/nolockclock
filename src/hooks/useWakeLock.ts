@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-export type WakeLockStatus = 'active' | 'released' | 'unsupported' | 'error' | 'idle'
+export type WakeLockStatus =
+  | 'active'
+  | 'released'
+  | 'unsupported'
+  | 'error'
+  | 'awaiting-gesture'
+  | 'idle'
 
 export function useWakeLock(enabled: boolean) {
   const [status, setStatus] = useState<WakeLockStatus>('idle')
@@ -17,48 +23,62 @@ export function useWakeLock(enabled: boolean) {
       setStatus('unsupported')
       return
     }
+    // Skip if already held
+    if (sentinelRef.current && !sentinelRef.current.released) return
+
     try {
-      sentinelRef.current = await navigator.wakeLock.request('screen')
+      const sentinel = await navigator.wakeLock.request('screen')
+      sentinelRef.current = sentinel
       setStatus('active')
 
-      sentinelRef.current.addEventListener('release', () => {
-        setStatus('released')
-        sentinelRef.current = null
+      sentinel.addEventListener('release', () => {
+        if (sentinelRef.current === sentinel) {
+          sentinelRef.current = null
+          setStatus('released')
+        }
       })
-    } catch {
-      setStatus('error')
+    } catch (e) {
+      // NotAllowedError = Safari requires user gesture first
+      if (e instanceof DOMException && e.name === 'NotAllowedError') {
+        setStatus('awaiting-gesture')
+      } else {
+        setStatus('error')
+      }
     }
   }, [])
 
   const release = useCallback(async () => {
-    if (sentinelRef.current) {
-      await sentinelRef.current.release()
-      sentinelRef.current = null
-    }
+    const s = sentinelRef.current
+    sentinelRef.current = null
+    try { await s?.release() } catch { /* ignore */ }
     setStatus('idle')
   }, [])
 
-  // Acquire on mount and when enabled changes
+  // Try on mount — Chrome/Firefox succeed; Safari sets 'awaiting-gesture'
   useEffect(() => {
     if (enabled) {
       acquire()
-    } else {
-      release()
     }
     return () => {
-      sentinelRef.current?.release()
+      sentinelRef.current?.release().catch(() => {})
     }
-  }, [enabled, acquire, release])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Re-acquire when page becomes visible again
+  // Release when user disables
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    if (!enabled) release()
+  }, [enabled, release])
+
+  // Re-acquire when page becomes visible (e.g. returning from another app)
+  useEffect(() => {
+    const onVisibility = () => {
       if (document.visibilityState === 'visible' && enabledRef.current) {
         acquire()
       }
     }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [acquire])
 
   return { status, acquire, release }

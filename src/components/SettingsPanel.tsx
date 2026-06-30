@@ -39,6 +39,7 @@ const WAKE_LOCK_LABELS: Record<WakeLockStatus, string> = {
   idle: 'OFF',
   unsupported: '非対応',
   error: 'エラー',
+  'awaiting-gesture': 'タップで有効化',
 }
 
 export function SettingsPanel({ settings, onUpdate, wakeLockStatus, onClose }: Props) {

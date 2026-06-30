@@ -5,16 +5,14 @@ interface Props {
   status: WakeLockStatus
 }
 
+const MESSAGES: Partial<Record<WakeLockStatus, string>> = {
+  unsupported: 'このブラウザはスリープ防止に対応していません',
+  error: '画面をONのまま維持できませんでした',
+  released: 'スリープ防止が解除されました。再取得を試みています…',
+}
+
 export function WakeLockBanner({ status }: Props) {
-  if (status === 'active' || status === 'idle') return null
-
-  const messages: Partial<Record<WakeLockStatus, string>> = {
-    unsupported: '画面スリープの防止はこのブラウザで利用できません',
-    error: '画面をONのまま維持できませんでした',
-    released: '画面ロックが解除されました。再取得を試みています…',
-  }
-
-  const msg = messages[status]
+  const msg = MESSAGES[status]
   if (!msg) return null
 
   return (

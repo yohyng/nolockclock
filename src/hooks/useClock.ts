@@ -29,15 +29,17 @@ export function useClock(): ClockState {
       })
     }
 
-    // Align to the next second boundary
-    const delay = 1000 - new Date().getMilliseconds()
-    const timeout = setTimeout(() => {
+    let intervalId: ReturnType<typeof setInterval>
+    // Align first tick to the next second boundary
+    const timeoutId = setTimeout(() => {
       tick()
-      const interval = setInterval(tick, 1000)
-      return () => clearInterval(interval)
-    }, delay)
+      intervalId = setInterval(tick, 1000)
+    }, 1000 - new Date().getMilliseconds())
 
-    return () => clearTimeout(timeout)
+    return () => {
+      clearTimeout(timeoutId)
+      clearInterval(intervalId)
+    }
   }, [])
 
   return state
