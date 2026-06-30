@@ -10,22 +10,3 @@
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
     env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
-
-.tapHint {
-  position: fixed;
-  bottom: calc(48px + env(safe-area-inset-bottom, 0px));
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 0.05em;
-  pointer-events: none;
-  margin: 0;
-  animation: pulse 2.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.9; }
-}

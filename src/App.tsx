@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ClockFace } from './components/ClockFace'
 import { SettingsPanel } from './components/SettingsPanel'
 import { WakeLockBanner } from './components/WakeLockBanner'
+import { WakeLockPrompt } from './components/WakeLockPrompt'
 import { useSettings } from './hooks/useSettings'
 import { useWakeLock } from './hooks/useWakeLock'
 import type { Settings } from './hooks/useSettings'
@@ -11,17 +12,26 @@ export default function App() {
   const { settings, update } = useSettings()
   const { status: wakeLockStatus, acquire } = useWakeLock(settings.wakeLockEnabled)
   const [showSettings, setShowSettings] = useState(false)
+  const [promptDismissed, setPromptDismissed] = useState(false)
 
-  // Safari requires Wake Lock to be requested inside a user gesture handler.
-  // Every tap on the clock face re-attempts acquisition if not yet active.
-  const handleTap = async () => {
+  const showPrompt =
+    settings.wakeLockEnabled &&
+    wakeLockStatus === 'awaiting-gesture' &&
+    !promptDismissed
+
+  const handleAcquire = async () => {
+    await acquire()
+    setPromptDismissed(true)
+  }
+
+  const handleClockTap = async () => {
+    if (showPrompt) return // let the prompt handle it
     if (settings.wakeLockEnabled && wakeLockStatus !== 'active') {
       await acquire()
     }
     setShowSettings(true)
   }
 
-  // When the user enables Wake Lock from the settings toggle (also a user gesture)
   const handleSettingsUpdate = async (patch: Partial<Settings>) => {
     update(patch)
     if (patch.wakeLockEnabled === true) {
@@ -30,13 +40,18 @@ export default function App() {
   }
 
   return (
-    <div className={styles.root} onClick={handleTap}>
+    <div className={styles.root} onClick={handleClockTap}>
       <ClockFace settings={settings} />
-      {wakeLockStatus === 'awaiting-gesture' && settings.wakeLockEnabled && (
-        <p className={styles.tapHint}>タップして画面スリープを防止</p>
-      )}
       <WakeLockBanner status={wakeLockStatus} />
-      {showSettings && (
+
+      {showPrompt && (
+        <WakeLockPrompt
+          onAcquire={handleAcquire}
+          onDismiss={() => setPromptDismissed(true)}
+        />
+      )}
+
+      {showSettings && !showPrompt && (
         <SettingsPanel
           settings={settings}
           onUpdate={handleSettingsUpdate}
