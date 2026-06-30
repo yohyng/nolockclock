@@ -3,6 +3,7 @@ import { ClockFace } from './components/ClockFace'
 import { SettingsPanel } from './components/SettingsPanel'
 import { WakeLockBanner } from './components/WakeLockBanner'
 import { WakeLockPrompt } from './components/WakeLockPrompt'
+import { PipButton } from './components/PipButton'
 import { useSettings } from './hooks/useSettings'
 import { useWakeLock } from './hooks/useWakeLock'
 import type { Settings } from './hooks/useSettings'
@@ -10,7 +11,8 @@ import styles from './App.module.css'
 
 export default function App() {
   const { settings, update } = useSettings()
-  const { status: wakeLockStatus, acquire } = useWakeLock(settings.wakeLockEnabled)
+  const { status: wakeLockStatus, acquire, togglePip, isPip, pipSupported } =
+    useWakeLock(settings.wakeLockEnabled)
   const [showSettings, setShowSettings] = useState(false)
   const [promptDismissed, setPromptDismissed] = useState(false)
 
@@ -25,7 +27,7 @@ export default function App() {
   }
 
   const handleClockTap = async () => {
-    if (showPrompt) return // let the prompt handle it
+    if (showPrompt) return
     if (settings.wakeLockEnabled && wakeLockStatus !== 'active') {
       await acquire()
     }
@@ -39,10 +41,19 @@ export default function App() {
     }
   }
 
+  const showPipBtn =
+    pipSupported &&
+    settings.wakeLockEnabled &&
+    (wakeLockStatus === 'active' || wakeLockStatus === 'video' || isPip)
+
   return (
     <div className={styles.root} onClick={handleClockTap}>
       <ClockFace settings={settings} />
       <WakeLockBanner status={wakeLockStatus} />
+
+      {showPipBtn && (
+        <PipButton isPip={isPip} onToggle={togglePip} />
+      )}
 
       {showPrompt && (
         <WakeLockPrompt
