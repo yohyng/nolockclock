@@ -35,9 +35,10 @@ function ToggleRow({ label, sub, checked, onChange }: ToggleRowProps) {
 
 const WAKE_LOCK_LABELS: Record<WakeLockStatus, string> = {
   active: 'ON',
+  video: '動画で代替中',
   released: '再取得中',
   idle: 'OFF',
-  unsupported: '非対応',
+  unsupported: '動画で代替中',
   error: 'エラー',
   'awaiting-gesture': 'タップで有効化',
 }

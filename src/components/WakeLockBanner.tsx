@@ -6,7 +6,6 @@ interface Props {
 }
 
 const MESSAGES: Partial<Record<WakeLockStatus, string>> = {
-  unsupported: 'このブラウザはスリープ防止に対応していません',
   error: '画面をONのまま維持できませんでした',
   released: 'スリープ防止が解除されました。再取得を試みています…',
 }
