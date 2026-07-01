@@ -6,13 +6,16 @@ import { WakeLockPrompt } from './components/WakeLockPrompt'
 import { PipButton } from './components/PipButton'
 import { useSettings } from './hooks/useSettings'
 import { useWakeLock } from './hooks/useWakeLock'
+import { usePipClock } from './hooks/usePipClock'
 import type { Settings } from './hooks/useSettings'
 import styles from './App.module.css'
 
 export default function App() {
   const { settings, update } = useSettings()
-  const { status: wakeLockStatus, acquire, togglePip, isPip, pipSupported } =
-    useWakeLock(settings.wakeLockEnabled)
+  const { status: wakeLockStatus, acquire } = useWakeLock(settings.wakeLockEnabled)
+  const { togglePip, isPip, supported: pipSupported } = usePipClock(
+    settings.wakeLockEnabled && (wakeLockStatus === 'active' || wakeLockStatus === 'video')
+  )
   const [showSettings, setShowSettings] = useState(false)
   const [promptDismissed, setPromptDismissed] = useState(false)
 
@@ -36,9 +39,7 @@ export default function App() {
 
   const handleSettingsUpdate = async (patch: Partial<Settings>) => {
     update(patch)
-    if (patch.wakeLockEnabled === true) {
-      await acquire()
-    }
+    if (patch.wakeLockEnabled === true) await acquire()
   }
 
   const showPipBtn =
