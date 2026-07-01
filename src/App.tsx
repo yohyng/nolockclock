@@ -13,7 +13,7 @@ import styles from './App.module.css'
 export default function App() {
   const { settings, update } = useSettings()
   const { status: wakeLockStatus, acquire } = useWakeLock(settings.wakeLockEnabled)
-  const { togglePip, isPip, supported: pipSupported } = usePipClock(
+  const { togglePip, isPip } = usePipClock(
     settings.wakeLockEnabled && (wakeLockStatus === 'active' || wakeLockStatus === 'video')
   )
   const [showSettings, setShowSettings] = useState(false)
@@ -42,10 +42,7 @@ export default function App() {
     if (patch.wakeLockEnabled === true) await acquire()
   }
 
-  const showPipBtn =
-    pipSupported &&
-    settings.wakeLockEnabled &&
-    (wakeLockStatus === 'active' || wakeLockStatus === 'video' || isPip)
+  const showPipBtn = settings.wakeLockEnabled && !showPrompt
 
   return (
     <div className={styles.root} onClick={handleClockTap}>
